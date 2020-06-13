@@ -3,21 +3,22 @@ package com.sample.camerax.ui.main
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProviders
 import com.sample.camerax.PermissionsHelper
 import com.sample.camerax.R
 import kotlinx.android.synthetic.main.main_fragment.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -28,9 +29,11 @@ class MainFragment : Fragment() {
         fun newInstance() = MainFragment()
         private const val RATIO_4_3_VALUE = 4.0 / 3.0
         private const val RATIO_16_9_VALUE = 16.0 / 9.0
-        private val TAG: String = "MainFragment"
+        private const val TAG: String = "MainFragment"
     }
 
+    private lateinit var cameraExecutor: ExecutorService
+    private lateinit var imageAnalysis: ImageAnalysis
     private lateinit var viewFinder: PreviewView
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var preview: Preview? = null
@@ -49,10 +52,26 @@ class MainFragment : Fragment() {
         return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
+    var featureOn = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         viewFinder = view_finder
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+        btn_analyze.setOnClickListener {
+            if (!featureOn) {
+                featureOn = true
+                imageAnalysis.setAnalyzer(cameraExecutor, TextAnalyzer() {
+                    tv_result.text = it
+                })
+            } else {
+                featureOn = false
+                imageAnalysis.clearAnalyzer()
+            }
+        }
 
     }
 
@@ -119,16 +138,27 @@ class MainFragment : Fragment() {
                 .setTargetRotation(rotation)
                 .build()
 
+            imageAnalysis = ImageAnalysis.Builder()
+                .setTargetResolution(Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+
             // Must unbind the use-cases before rebinding them
             cameraProvider.unbindAll()
 
             try {
                 // A variable number of use-cases can be passed here -
                 // camera provides access to CameraControl & CameraInfo
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+                camera =
+                    cameraProvider.bindToLifecycle(
+                        this as LifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageAnalysis
+                    )
 
                 // Attach the viewfinder's surface provider to preview use case
-                preview?.setSurfaceProvider(viewFinder.createSurfaceProvider(camera?.cameraInfo))
+                preview?.setSurfaceProvider(viewFinder.createSurfaceProvider())
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
@@ -154,5 +184,4 @@ class MainFragment : Fragment() {
         }
         return AspectRatio.RATIO_16_9
     }
-
 }
