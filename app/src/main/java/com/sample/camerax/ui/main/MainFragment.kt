@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import com.sample.camerax.PermissionsHelper
 import com.sample.camerax.R
 import kotlinx.android.synthetic.main.main_fragment.*
@@ -46,6 +45,7 @@ class MainFragment : Fragment() {
 
     //    private lateinit var viewModel: MainViewModel
     private val instantTextViewModel: InstantTextViewModel by viewModel()
+    private val barcodeViewModel: BarcodeScanViewModel by viewModel()
 
     private lateinit var permissionsHelper: PermissionsHelper
 
@@ -71,6 +71,10 @@ class MainFragment : Fragment() {
             tv_result.text = it
         })
 
+        barcodeViewModel.resultLiveData.observe(viewLifecycleOwner, Observer {
+            tv_result.text = it
+        })
+
         btn_analyze.setOnClickListener {
             if (!featureOn) {
                 featureOn = true
@@ -78,6 +82,16 @@ class MainFragment : Fragment() {
             } else {
                 featureOn = false
                 instantTextViewModel.stopImageAnalysis()
+            }
+        }
+
+        btn_barcode.setOnClickListener {
+            if (!featureOn) {
+                featureOn = true
+                barcodeViewModel.startImageAnalysis(cameraExecutor)
+            } else {
+                featureOn = false
+                barcodeViewModel.stopImageAnalysis()
             }
         }
 

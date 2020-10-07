@@ -57,10 +57,14 @@ dependencies {
     implementation 'androidx.camera:camera-view:1.0.0-alpha17'
     implementation 'androidx.fragment:fragment-ktx:1.2.5'
 
+    implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:16.1.2'
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.1'
 
     implementation 'org.koin:koin-android:2.1.5'
     implementation 'org.koin:koin-androidx-scope:2.1.5'
     implementation 'org.koin:koin-androidx-viewmodel:2.1.5'
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1'
+
 
 }

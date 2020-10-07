@@ -21,6 +21,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <Button
+        android:id="@+id/btn_barcode"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/btn_round"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btn_analyze" />
+
     <TextView
         android:id="@+id/tv_result"
         android:layout_width="wrap_content"

@@ -1,25 +1,13 @@
 package com.sample.camerax.ui.main
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import org.koin.core.KoinComponent
-import org.koin.core.inject
-import java.util.concurrent.Executor
+import com.google.mlkit.vision.text.Text
 
-class InstantTextViewModel : ViewModel(), KoinComponent {
-
-    private val cameraImageAnalysis: CameraImageAnalysis by inject()
-
-    val resultLiveData = MutableLiveData<String>()
-
-    fun startImageAnalysis(cameraExecutor: Executor) {
-        cameraImageAnalysis.imageAnalysis.setAnalyzer(cameraExecutor, TextAnalyzer() {
-            resultLiveData.value = it
-        })
+class InstantTextViewModel : BaseAnalyzerViewModel<Text>() {
+    private val textAnalyzer = TextAnalyzer() {
+        resultLiveData.value = it
     }
 
-    fun stopImageAnalysis() {
-        cameraImageAnalysis.imageAnalysis.clearAnalyzer()
+    override fun getAnalyzer(): BaseAnalyzer<Text> {
+        return textAnalyzer
     }
-
 }
