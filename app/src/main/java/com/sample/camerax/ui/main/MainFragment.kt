@@ -3,20 +3,25 @@ package com.sample.camerax.ui.main
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
-import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.camera.core.*
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.sample.camerax.PermissionsHelper
 import com.sample.camerax.R
 import kotlinx.android.synthetic.main.main_fragment.*
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -32,14 +37,15 @@ class MainFragment : Fragment() {
         private const val TAG: String = "MainFragment"
     }
 
+    private val cameraImageAnalysis: CameraImageAnalysis by inject()
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var imageAnalysis: ImageAnalysis
     private lateinit var viewFinder: PreviewView
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
     private var preview: Preview? = null
     private var camera: Camera? = null
 
-    private lateinit var viewModel: MainViewModel
+    //    private lateinit var viewModel: MainViewModel
+    private val instantTextViewModel: InstantTextViewModel by viewModel()
 
     private lateinit var permissionsHelper: PermissionsHelper
 
@@ -61,15 +67,17 @@ class MainFragment : Fragment() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        instantTextViewModel.resultLiveData.observe(viewLifecycleOwner, Observer {
+            tv_result.text = it
+        })
+
         btn_analyze.setOnClickListener {
             if (!featureOn) {
                 featureOn = true
-                imageAnalysis.setAnalyzer(cameraExecutor, TextAnalyzer() {
-                    tv_result.text = it
-                })
+                instantTextViewModel.startImageAnalysis(cameraExecutor)
             } else {
                 featureOn = false
-                imageAnalysis.clearAnalyzer()
+                instantTextViewModel.stopImageAnalysis()
             }
         }
 
@@ -77,7 +85,7 @@ class MainFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+//        viewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
         permissionsHelper = PermissionsHelper(this)
         permissionsGranted = permissionsHelper.hasCameraPermission()
     }
@@ -138,11 +146,6 @@ class MainFragment : Fragment() {
                 .setTargetRotation(rotation)
                 .build()
 
-            imageAnalysis = ImageAnalysis.Builder()
-                .setTargetResolution(Size(1280, 720))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-
             // Must unbind the use-cases before rebinding them
             cameraProvider.unbindAll()
 
@@ -154,11 +157,11 @@ class MainFragment : Fragment() {
                         this as LifecycleOwner,
                         cameraSelector,
                         preview,
-                        imageAnalysis
+                        cameraImageAnalysis.imageAnalysis
                     )
 
                 // Attach the viewfinder's surface provider to preview use case
-                preview?.setSurfaceProvider(viewFinder.createSurfaceProvider())
+                preview?.setSurfaceProvider(viewFinder.surfaceProvider)
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }

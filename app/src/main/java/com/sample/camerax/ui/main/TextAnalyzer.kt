@@ -8,9 +8,11 @@ import com.google.mlkit.vision.text.TextRecognition
 
 class TextAnalyzer(private val result: (String) -> Unit) : ImageAnalysis.Analyzer {
 
+    private val recognizer = TextRecognition.getClient()
+
     @androidx.camera.core.ExperimentalGetImage
     override fun analyze(imageProxy: ImageProxy) {
-        val recognizer = TextRecognition.getClient()
+        val startTime = System.currentTimeMillis()
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
@@ -18,6 +20,8 @@ class TextAnalyzer(private val result: (String) -> Unit) : ImageAnalysis.Analyze
                 .addOnSuccessListener { text ->
                     Log.d(TAG, "Text ${text.text}")
                     result.invoke(text.text)
+                    val endTime = System.currentTimeMillis()
+                    Log.i(TAG, "FrameProcessTime: ${endTime - startTime} Width: ${mediaImage.width} Height: ${mediaImage.height}")
                     imageProxy.close()
                 }
                 .addOnFailureListener { e ->
