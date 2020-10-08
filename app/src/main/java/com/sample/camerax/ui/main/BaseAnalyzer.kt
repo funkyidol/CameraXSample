@@ -28,10 +28,10 @@ abstract class BaseAnalyzer<T> : ImageAnalysis.Analyzer {
 
     }
 
-    abstract fun onFailure(exception: Exception)
+    abstract fun processImage(image: InputImage): Task<T>
 
     abstract fun onSuccess(imageResult: T)
 
-    abstract fun processImage(image: InputImage): Task<T>
+    abstract fun onFailure(exception: Exception)
 
 }
