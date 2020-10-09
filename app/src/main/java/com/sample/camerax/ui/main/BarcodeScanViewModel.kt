@@ -4,7 +4,7 @@ import com.google.mlkit.vision.barcode.Barcode
 
 class BarcodeScanViewModel : BaseAnalyzerViewModel<MutableList<Barcode>>() {
     private val barcodeAnalyzer = BarcodeAnalyzer() {
-        resultLiveData.value = it
+        resultLiveData.postValue(it)
     }
 
     override fun getAnalyzer(): BaseAnalyzer<MutableList<Barcode>> {
